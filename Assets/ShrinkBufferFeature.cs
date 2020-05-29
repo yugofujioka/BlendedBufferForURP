@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 /// <summary>
-/// URPで縮小バッファ v1
+/// Shrink Buffer for URP
 /// </summary>
 public class ShrinkBufferFeature : ScriptableRendererFeature {
     [System.Serializable]
@@ -16,7 +16,7 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
     }
 
     public Settings settings = new Settings();
-    private CustomRenderPass scriptablePass;
+    private CustomRenderPass scriptablePass = null;
 
     class CustomRenderPass : ScriptableRenderPass {
 
@@ -24,51 +24,45 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
         private ProfilingSampler profilingSampler = new ProfilingSampler(PASS_NAME);
         private ShaderTagId SHADER_TAG_ID = new ShaderTagId("SRPDefaultUnlit");
 
-        public Settings settings = null;
+        private Settings settings = null;
         private Material copyDepth = null;
-        RenderTargetHandle tempBufferHandle, depthBufferHandle;
+        RenderTargetHandle tempBufferHandle;
 
 
         public CustomRenderPass(Settings settings) {
             this.settings = settings;
             this.renderPassEvent = this.settings.Event;
-
             this.tempBufferHandle.Init("_ShrinkBufferColor");
-            this.depthBufferHandle.Init("_ShrinkBufferDepth");
 
-            Shader copyDepthShader = Shader.Find("Hidden/Universal Render Pipeline/CopyDepth");
+            var copyDepthShader = Shader.Find("Hidden/Universal Render Pipeline/CopyDepth");
             this.copyDepth = new Material(copyDepthShader);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
-            CommandBuffer cmd = CommandBufferPool.Get(PASS_NAME);
+            var cmd = CommandBufferPool.Get(PASS_NAME);
 
             using (new ProfilingScope(cmd, this.profilingSampler)) {
-                // 縮小バッファ生成
+                // Create ShrinkBuffer
                 cmd.Clear();
-                cmd.GetTemporaryRT(this.tempBufferHandle.id, this.settings.resolution.x, this.settings.resolution.y, 0, FilterMode.Bilinear, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-                // note: ColorBufferとDepthBufferのサイズを合わせないといけないのでコピーする
-                //       直接DepthBufferを参照しているはずだがDepthTextureを有効（_CameraDepthTextureを用意）しないとダメ…？
-                cmd.GetTemporaryRT(this.depthBufferHandle.id, this.settings.resolution.x, this.settings.resolution.y, 32, FilterMode.Point, RenderTextureFormat.Depth);
-                cmd.Blit(this.depthAttachment, this.depthBufferHandle.id, this.copyDepth);
-                cmd.SetRenderTarget(new RenderTargetIdentifier(this.tempBufferHandle.id), new RenderTargetIdentifier(this.depthBufferHandle.id));
+				if (UniversalRenderPipeline.asset.supportsHDR)
+	                cmd.GetTemporaryRT(this.tempBufferHandle.id, this.settings.resolution.x, this.settings.resolution.y, 32, FilterMode.Bilinear, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+				else
+	                cmd.GetTemporaryRT(this.tempBufferHandle.id, this.settings.resolution.x, this.settings.resolution.y, 32, FilterMode.Bilinear, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                cmd.SetRenderTarget(new RenderTargetIdentifier(this.tempBufferHandle.id));
                 cmd.ClearRenderTarget(false, true, Color.black);
-
-                // RenderTarget切り換えの為一度実行
+                cmd.Blit(this.depthAttachment, this.tempBufferHandle.id, this.copyDepth);
                 context.ExecuteCommandBuffer(cmd);
 
-                // LayerMaskで描画
+                // Rendering by LayerMask(e.g. any VFX)
                 var drawingSettings = CreateDrawingSettings(SHADER_TAG_ID, ref renderingData, SortingCriteria.CommonTransparent);
                 var filteringSettings = new FilteringSettings(RenderQueueRange.transparent, this.settings.LayerMask);
                 var renderStateBlock = new RenderStateBlock(RenderStateMask.Nothing);
                 context.DrawRenderers(renderingData.cullResults, ref drawingSettings, ref filteringSettings, ref renderStateBlock);
 
-                // 合成
+				// Combine ShrinkBuffer to ColorAttachment
                 cmd.Clear();
                 cmd.Blit(this.tempBufferHandle.id, this.colorAttachment, this.settings.blitMaterial);
-                //cmd.Blit(DEPTH_COPY, this.colorAttachment); // Depthバッファ確認
                 cmd.ReleaseTemporaryRT(this.tempBufferHandle.id);
-                cmd.ReleaseTemporaryRT(this.depthBufferHandle.id);
                 cmd.SetRenderTarget(this.colorAttachment, this.depthAttachment);
                 context.ExecuteCommandBuffer(cmd);
             }
