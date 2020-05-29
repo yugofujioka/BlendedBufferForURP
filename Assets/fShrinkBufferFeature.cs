@@ -35,7 +35,8 @@ public class fShrinkBufferFeature : ScriptableRendererFeature {
             this.tempBufferHandle.Init("_ShrinkBufferColor");
 
             var copyDepthShader = Shader.Find("Hidden/Universal Render Pipeline/CopyDepth");
-            this.copyDepth = new Material(copyDepthShader);
+			if (copyDepthShader != null)
+	            this.copyDepth = new Material(copyDepthShader);
         }
 
         public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData) {
