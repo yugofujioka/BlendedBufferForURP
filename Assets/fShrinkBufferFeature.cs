@@ -5,10 +5,10 @@ using UnityEngine.Rendering.Universal;
 /// <summary>
 /// Shrink Buffer for URP
 /// </summary>
-public class ShrinkBufferFeature : ScriptableRendererFeature {
+public class fShrinkBufferFeature : ScriptableRendererFeature {
     [System.Serializable]
     public class Settings {
-        public string passTag = "ShrinkBuffer";
+        public string passTag = "fShrinkBuffer";
         public RenderPassEvent Event = RenderPassEvent.AfterRenderingSkybox;
         public Vector2Int resolution = new Vector2Int(320, 180);
         public LayerMask LayerMask = 0;
@@ -16,9 +16,9 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
     }
 
     public Settings settings = new Settings();
-    private CustomRenderPass scriptablePass = null;
+    private ShrinkBufferPass shrinkBufferPass = null;
 
-    class CustomRenderPass : ScriptableRenderPass {
+    class ShrinkBufferPass : ScriptableRenderPass {
 
         private const string PASS_NAME = "ShrinkBuffer";
         private ProfilingSampler profilingSampler = new ProfilingSampler(PASS_NAME);
@@ -29,7 +29,7 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
         RenderTargetHandle tempBufferHandle;
 
 
-        public CustomRenderPass(Settings settings) {
+        public ShrinkBufferPass(Settings settings) {
             this.settings = settings;
             this.renderPassEvent = this.settings.Event;
             this.tempBufferHandle.Init("_ShrinkBufferColor");
@@ -72,7 +72,7 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
     }
 
     public override void Create() {
-        this.scriptablePass = new CustomRenderPass(this.settings);
+        this.shrinkBufferPass = new ShrinkBufferPass(this.settings);
 
 #if UNITY_EDITOR
 		if (!UniversalRenderPipeline.asset.supportsCameraDepthTexture) {
@@ -83,8 +83,8 @@ public class ShrinkBufferFeature : ScriptableRendererFeature {
 		}
 
     public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData) {
-        this.scriptablePass.ConfigureTarget(renderer.cameraColorTarget, renderer.cameraDepth);
-        renderer.EnqueuePass(this.scriptablePass);
+        this.shrinkBufferPass.ConfigureTarget(renderer.cameraColorTarget, renderer.cameraDepth);
+        renderer.EnqueuePass(this.shrinkBufferPass);
     }
 }
 
