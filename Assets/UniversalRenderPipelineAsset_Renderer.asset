@@ -72,14 +72,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88992752e78f9814da9bfa9eb89fcea6, type: 3}
-  m_Name: NewShrinkBuffer
+  m_Name: fBlendedBuffer
   m_EditorClassIdentifier: 
-  m_Active: 0
+  m_Active: 1
   settings:
-    renderTargetName: _CustomTargetTexture
     renderPassEvent: 300
-    resolution: {x: 960, y: 540}
+    downSampling: 4
     layerMask:
       serializedVersion: 2
       m_Bits: 2
-    blitMaterial: {fileID: 2100000, guid: 359d78f86f3b23544b281f8ba1ad8b54, type: 2}
