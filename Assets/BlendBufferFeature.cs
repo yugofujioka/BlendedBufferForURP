@@ -145,7 +145,7 @@ namespace BlendedBuffer
 
         public override void Create()
         {
-            this.name = "fBlendedBuffer";
+            this.name = "BlendedBuffer";
             this.blendedBufferPass = new BlendedBufferPass(this.settings);
         }
 

@@ -72,7 +72,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 88992752e78f9814da9bfa9eb89fcea6, type: 3}
-  m_Name: fBlendedBuffer
+  m_Name: BlendedBuffer
   m_EditorClassIdentifier: 
   m_Active: 1
   settings:
