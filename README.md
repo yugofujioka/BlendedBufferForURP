@@ -1,19 +1,20 @@
-# fShrinkBuffer4URP
-Shrink Buffer for Universal RP
+# BlendedBufferForURP
+Optimized Transparent(Alpha, Additive) buffers
 
 This ScriptableRendererFeature is useful to render VFX that has high filrate.
 
-![image](https://user-images.githubusercontent.com/24952685/83267124-b9d91c00-a1fe-11ea-8c6b-d6547b2b92a4.png)
-![image](https://user-images.githubusercontent.com/24952685/83267198-d37a6380-a1fe-11ea-8363-eac063f8daf9.png)
+![image](https://github.com/yugo-unity/BlendedBufferForURP/assets/57246289/fba3ac93-252f-4afc-9393-f77254db158e)
+![image](https://github.com/yugo-unity/BlendedBufferForURP/assets/57246289/56db2884-9cc2-4a61-9ab0-1b66c3c4036e)
 
 
 ## How to use
-- Add ScriptableRendererFeature(fShrinkBufferFeature) to FowardRendererData.
-- Disable LayerMask you want to use on ShrinkBuffer from Filtering
-- Configure settings for ShrinkBuffer
+- Add ScriptableRendererFeature(BlendedBufferFeature) to UniversalRendererData.
+- Disable LayerMask you want to use on BlendedBuffer from Filtering
+- Configure settings for BlendedBuffer
 
-![image](https://user-images.githubusercontent.com/24952685/83267740-9e224580-a1ff-11ea-9f56-2a6514d382c7.png)
+![image](https://github.com/yugo-unity/BlendedBufferForURP/assets/57246289/af507e47-9e4b-4bb2-b6d6-d73a18b76264)
 
-## Required
-Unity 2019.3.14f1 or later
-URP v7.3.1 or later
+
+## Enviroment
+Unity 2022.3.8f1
+URP v14.0.8
