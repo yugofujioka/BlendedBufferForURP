@@ -1,4 +1,4 @@
-Shader "Custom/Blit"
+Shader "BlendedBuffer/Premultiply Blit"
 {
     SubShader
     {
@@ -7,7 +7,7 @@ Shader "Custom/Blit"
         Pass
         {
             Name "Blit Shrink"
-            Blend One OneMinusSrcAlpha // RENEW fujioka: Premultiply
+            Blend One OneMinusSrcAlpha // RENEW: Premultiply
             ZTest Always
             ZWrite Off
             Cull Off
@@ -15,7 +15,7 @@ Shader "Custom/Blit"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Fragment
-            //#pragma multi_compile_fragment _ _LINEAR_TO_SRGB_CONVERSION
+            #pragma multi_compile_fragment _ _LINEAR_TO_SRGB_CONVERSION
             #pragma multi_compile_fragment _ DEBUG_DISPLAY
 
             // Core.hlsl for XR dependencies

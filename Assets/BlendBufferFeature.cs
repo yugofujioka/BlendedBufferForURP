@@ -4,12 +4,12 @@ using UnityEngine.Rendering.Universal;
 using System.Collections.Generic;
 using UnityEngine.Experimental.Rendering;
 
-namespace FBlendedBuffer
+namespace BlendedBuffer
 {
     /// <summary>
     /// Blended Buffer for URP
     /// </summary>
-    public class fBlendedBufferFeature : ScriptableRendererFeature
+    public class BlendedBufferFeature : ScriptableRendererFeature
     {
         const string RENDER_TARGET_NAME = "_BlendedTarget";
         
@@ -55,7 +55,7 @@ namespace FBlendedBuffer
                 if (copyDepthShader != null)
                     this.copyDepth = new Material(copyDepthShader);
                 
-                var blitShader = Shader.Find("Custom/Blit");
+                var blitShader = Shader.Find("BlendedBuffer/Premultiply Blit");
                 if (blitShader != null)
                     this.blitMaterial = new Material(blitShader);
             }
