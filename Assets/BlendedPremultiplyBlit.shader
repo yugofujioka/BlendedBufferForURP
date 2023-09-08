@@ -1,5 +1,15 @@
 Shader "BlendedBuffer/Premultiply Blit"
 {
+//    Properties
+//    {
+//        [Enum(UnityEngine.Rendering.CompareFunction)]
+//        _StencilComp("Stencil Comp", Int) = 0 // Disable
+//        [Enum(UnityEngine.Rendering.BlendMode)]
+//        _SrcFactor("Src Factor", Int) = 1     // One
+//        [Enum(UnityEngine.Rendering.BlendMode)]
+//        _DstFactor("Dst Factor", Int) = 10    // OneMinusSrcAlpha
+//    }
+    
     SubShader
     {
         Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline"}
@@ -7,15 +17,22 @@ Shader "BlendedBuffer/Premultiply Blit"
         Pass
         {
             Name "Blit Shrink"
-            Blend One OneMinusSrcAlpha // RENEW: Premultiply
+            //Blend [_SrcFactor] [_DstFactor]
+            Blend One OneMinusSrcAlpha
             ZTest Always
             ZWrite Off
             Cull Off
+            
+//            Stencil {  
+//                Ref 1
+//                Comp [_StencilComp]
+//                Pass Replace  
+//            }
 
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Fragment
-            #pragma multi_compile_fragment _ _LINEAR_TO_SRGB_CONVERSION
+            //#pragma multi_compile_fragment _ _LINEAR_TO_SRGB_CONVERSION // no need?
             #pragma multi_compile_fragment _ DEBUG_DISPLAY
 
             // Core.hlsl for XR dependencies
@@ -28,10 +45,11 @@ Shader "BlendedBuffer/Premultiply Blit"
 
             half4 Fragment(Varyings input) : SV_Target
             {
-                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 uv = input.texcoord;
 
                 half4 col = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_BlitTexture, uv);
+
+                //clip(col.a - 0.001); // TODO: confirm performance
 
                 #ifdef _LINEAR_TO_SRGB_CONVERSION
                 col = LinearToSRGB(col);

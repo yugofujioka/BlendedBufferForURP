@@ -38,7 +38,7 @@ namespace BlendedBuffer
             static readonly List<ShaderTagId> SHADER_TAG_ID = new List<ShaderTagId>
             {
                 new ShaderTagId("SRPDefaultUnlit"),
-                new ShaderTagId("UniversalForward"),
+                //new ShaderTagId("UniversalForward"),
             };
 
             RTHandle colorRT, depthRT;
@@ -51,13 +51,18 @@ namespace BlendedBuffer
                 this.renderPassEvent = settings.renderPassEvent;
                 this.filteringSettings = new FilteringSettings(RenderQueueRange.transparent, settings.layerMask);
                 
-                var copyDepthShader = Shader.Find("Hidden/Universal Render Pipeline/CopyDepth");
+                //var copyDepthShader = Shader.Find("Hidden/Universal Render Pipeline/CopyDepth");
+                var copyDepthShader = Shader.Find("BlendedBuffer/CopyDepth");
                 if (copyDepthShader != null)
                     this.copyDepth = new Material(copyDepthShader);
                 
+                //var blitShader = Shader.Find("Hidden/Universal Render Pipeline/Blit");
                 var blitShader = Shader.Find("BlendedBuffer/Premultiply Blit");
                 if (blitShader != null)
                     this.blitMaterial = new Material(blitShader);
+
+                // No need?
+                this.ResetTarget();
             }
 
             // Called at SetupRenderPasses
@@ -79,11 +84,11 @@ namespace BlendedBuffer
                         cmd.ClearRenderTarget(true, true, Color.clear);
 
                         // Blit DepthBuffer -> BlendedBuffer
-                        if (this.depthRT.rt.graphicsFormat == GraphicsFormat.None)
-                            cmd.EnableShaderKeyword("_OUTPUT_DEPTH");
-                        else
-                            cmd.DisableShaderKeyword("_OUTPUT_DEPTH");
-
+                        // NOTE: for preset CopyDepth shader 
+                        // if (this.depthRT.rt.graphicsFormat == GraphicsFormat.None)
+                        //     cmd.EnableShaderKeyword("_OUTPUT_DEPTH");
+                        // else
+                        //     cmd.DisableShaderKeyword("_OUTPUT_DEPTH");
                         var targetDepthRTHandle = renderingData.cameraData.renderer.cameraDepthTargetHandle;
                         var scaleBias = new Vector4(1f, 1f, 0f, 0f);
                         Blitter.BlitTexture(cmd, targetDepthRTHandle, scaleBias, this.copyDepth, 0);
@@ -108,6 +113,8 @@ namespace BlendedBuffer
                     var rl = context.CreateRendererList(ref param);
                     cmd.DrawRendererList(rl);
 #else
+                    context.ExecuteCommandBuffer(cmd);
+                    cmd.Clear();
                     // NOTE: DrawRenderers式なら先にExecuteCommandBufferしないといけない
                     context.DrawRenderers(renderingData.cullResults, ref drawSettings, ref filteringSettings);
 #endif
@@ -115,11 +122,17 @@ namespace BlendedBuffer
                     if (isGameCamera)
                     {
                         // Blit BlendedBuffer -> CameraColorAttachment
-                        var cameraColorTargetRTHandle = renderingData.cameraData.renderer.cameraColorTargetHandle;
-                        Blitter.BlitCameraTexture(cmd,
-                                                  this.colorRT, cameraColorTargetRTHandle,
-                                                  RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
-                                                  this.blitMaterial, 0);
+                        // Blitter.BlitCameraTexture(cmd,
+                        //                           this.colorRT, renderingData.cameraData.renderer.cameraColorTargetHandle,
+                        //                           RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
+                        //                           this.blitMaterial, 0);
+                        var dstColorRT = renderingData.cameraData.renderer.cameraColorTargetHandle;
+                        //var dstDepthRT = renderingData.cameraData.renderer.cameraDepthTargetHandle;
+                        //var viewportScale = this.colorRT.useScaling ? new Vector2(this.colorRT.rtHandleProperties.rtHandleScale.x, this.colorRT.rtHandleProperties.rtHandleScale.y) : Vector2.one;
+                        //cmd.SetRenderTarget(dstColorRT, dstDepthRT);
+                        var viewportScale = Vector2.one;
+                        cmd.SetRenderTarget(dstColorRT);
+                        Blitter.BlitTexture(cmd, this.colorRT, viewportScale, this.blitMaterial, 0);
                     }
                 }
 
@@ -137,8 +150,8 @@ namespace BlendedBuffer
 
             public void Dispose()
             {
-                DestroyImmediate(this.copyDepth);
-                DestroyImmediate(this.blitMaterial);
+                CoreUtils.Destroy(this.copyDepth);
+                CoreUtils.Destroy(this.blitMaterial);
                 this.copyDepth = this.blitMaterial = null;
             }
         }
@@ -146,7 +159,8 @@ namespace BlendedBuffer
         public override void Create()
         {
             this.name = "BlendedBuffer";
-            this.blendedBufferPass = new BlendedBufferPass(this.settings);
+            if (this.blendedBufferPass == null)
+                this.blendedBufferPass = new BlendedBufferPass(this.settings);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -180,8 +194,11 @@ namespace BlendedBuffer
         protected override void Dispose(bool disposing)
         {
             this.blendedBufferPass.Dispose();
+            this.blendedBufferPass = null;
+            
             this.colorRTHandle?.Release();
             this.depthRTHandle?.Release();
+            this.colorRTHandle = this.depthRTHandle = null;
         }
     }
 }
